@@ -1,0 +1,29 @@
+body {
+    font-size: 13px;
+}
+
+.table>thead>tr>th {
+    font-size: 13px;
+}
+
+.table>tbody>tr>td {
+    font-size: 13px;
+}
+
+main {
+    padding: 20px 0;
+}
+
+.pagination {
+    margin: 2px 0;
+}
+
+.btn-success {
+    background-image: linear-gradient(to bottom,#529ede 0,#337ab7 100%);
+    border-color: #337ab7;
+}
+
+.btn-success:focus, .btn-success:hover {
+    background-color: #337ab7;
+    border-color: #337ab7;
+}
