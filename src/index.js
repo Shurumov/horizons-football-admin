@@ -5,11 +5,15 @@ import './bootstrap-theme.min.css';
 import './style.css';
 
 class App extends React.Component {
+	
 	constructor(props){
 		super(props);
+		let { session } = this.props;
 		this.state = {
 			createMatch: false,
 			matches: [],
+			teams: [],
+			session: session,
 			editableMatch: null
 		}
 	}
@@ -66,20 +70,21 @@ class App extends React.Component {
 		})
 	}
 
-	setEditableMatch = (stageId, groupId, team1Id, team2Id, matchId) => {
-		if (stageId && groupId && team1Id && team2Id && matchId){
+	setEditableMatch = (stageId, groupId, team1Id, team2Id, matchId, score) => {
+		if (stageId && groupId && team1Id && team2Id && matchId && score){
 				const editableMatch = {
 								"stageId": stageId,
 								"groupId": groupId,
 								"team1Id": team1Id,
 								"team2Id": team2Id,
-								"matchId": matchId
+								"matchId": matchId,
+								"score": score
 							}
 					this.setState({
-						editableMatch: editableMatch
-					})
+						editableMatch: editableMatch,
+						createMatch: true
+					});
 				}
-		
 	}
 
 	componentDidMount() {
@@ -98,6 +103,9 @@ class App extends React.Component {
 				} else {
 					var response = JSON.parse(xhr.responseText)
 					const session = response.sessionId;
+					app.setState({
+						session: session
+					})
 					getMatches(baseUrl, projectName, session)
 				}
 			};
@@ -106,7 +114,7 @@ class App extends React.Component {
 
 		function getMatches(baseUrl, projectName, session){
 			var xhr = new XMLHttpRequest();
-			xhr.open('GET', baseUrl + projectName + "/objects/GamesFooball?include=['id','stage','group','team1','team2','score']");
+			xhr.open('GET', baseUrl + projectName + "/objects/GamesFooball?include=['id','stage','group','team1','team2','score']&take=-1&order=-createdAt");
 			xhr.setRequestHeader('X-Appercode-Session-Token', session);
 			xhr.send();
 	
@@ -135,7 +143,7 @@ class App extends React.Component {
 
 		function getStages(baseUrl, projectName, session){
 			var xhr = new XMLHttpRequest();
-			xhr.open('GET', baseUrl + projectName + "/objects/Stages?include=['title','date','id']");
+			xhr.open('GET', baseUrl + projectName + "/objects/Stages?include=['title','date','id']&take=-1");
 			xhr.setRequestHeader('X-Appercode-Session-Token', session);
 			xhr.send();
 	
@@ -164,7 +172,7 @@ class App extends React.Component {
 
 		function getGroups(baseUrl, projectName, session){
 			var xhr = new XMLHttpRequest();
-			xhr.open('GET', baseUrl + projectName + "/objects/GroupsFootball?include=['title','stage','teams','id']");
+			xhr.open('GET', baseUrl + projectName + "/objects/GroupsFootball?include=['title','stage','teams','id']&take=-1");
 			xhr.setRequestHeader('X-Appercode-Session-Token', session);
 			xhr.send();
 	
@@ -194,7 +202,7 @@ class App extends React.Component {
 
 		function getTeams(baseUrl, projectName, session){
 			var xhr = new XMLHttpRequest();
-			xhr.open('GET', baseUrl + projectName + "/objects/footballTeam?include=['id','title','symbol']");
+			xhr.open('GET', baseUrl + projectName + "/objects/footballTeam?include=['id','title','symbol']&take=-1");
 			xhr.setRequestHeader('X-Appercode-Session-Token', session);
 			xhr.send();
 	
@@ -223,7 +231,9 @@ class App extends React.Component {
 			})
 		}
 
-		const { baseUrl, projectName, session, refreshToken} = this.props;
+		const { baseUrl, projectName,  refreshToken} = this.props;
+		const { session } = this.state;
+
 		const { addTeamNameToMathes, addStageNameToMathes, addGroupNameToMathes } = this;
 		
 		const app = this;
@@ -234,18 +244,24 @@ class App extends React.Component {
 	render(){
 		let { groups, matches, stages, teams, createMatch, editableMatch } = this.state;
 		const app = this;
-		const  setEditableMatch  = app.setEditableMatch;
+		const { setEditableMatch } = this;
 		
 		return (<main>
 							<div className="container">
-								<AddMatch app = { app } createMatch= { createMatch } />
-								<ListMatches matches = {matches} createMatch = { createMatch }
-														 setEditableMatch = { setEditableMatch } />
+								{!createMatch ? <div>	<AddMatch app = { app } createMatch= { createMatch } />
+																			<ListMatches matches = {matches} createMatch = { createMatch }
+																						setEditableMatch = { setEditableMatch }
+																						editableMatch = { editableMatch } />
+																</div>
+															: null}
+								
 								{createMatch ? 
-									<FormAddMatch groups ={ groups }
+									<FormEditMatch groups ={ groups }
 																stages = { stages } 
 																teams = { teams }
-																editableMatch = {editableMatch} /> : 
+																editableMatch = { editableMatch }
+																app = { app }
+																/> : 
 									null}
 							</div>
 						</main>
@@ -269,13 +285,46 @@ const AddMatch = (props) => {
 	)
 }
 
+const BackButton = (props) => {
+	const { app } = props;
+
+	return (
+		<a className="btn btn-default pull-right" href="#" 
+			 onClick = { () => app.setState({createMatch: false, editableMatch: null})}>
+			 Назад</a>
+	)
+}
+
+const CreateMatchButton = (props) => {
+	const { app, sendCreateMatch } = props;
+	return (
+		<div className="form-group">
+			<a className="btn btn-success" onClick = { () => sendCreateMatch(app.state.session) }>Создать</a>
+			<BackButton app = { app } />
+		</div>
+	)
+}
+
+const EditMatch = (props) => {
+	const { app, sendUpdateMatch, sendDeleteMatch } = props;
+	return (
+		<div className="form-group">
+			<a className="btn btn-success" 
+							onClick = { () => sendUpdateMatch(app.state.session)}>Сохранить</a>
+			<a className = "btn btn-default"
+							onClick = { () => sendDeleteMatch(app.state.session) }>Удалить</a>
+			<BackButton app = { app }/>
+		</div>
+	)
+}
+
 const ListMatches = (props) => {
 
 	const { matches, setEditableMatch } = props;
 	var list = matches.map( ( match, index) => (
 
 		<tr key = { index }>
-      <td onClick={() => setEditableMatch(match.stage, match.group, match.team1, match.team2, match.id)}>
+      <td onClick={() => setEditableMatch(match.stage, match.group, match.team1, match.team2, match.id, match.score)}>
       	<a href="#" 
 					  >
 					 {match.score}</a>
@@ -303,31 +352,34 @@ const ListMatches = (props) => {
 	)
 }
 
-class FormAddMatch extends React.Component{
+class FormEditMatch extends React.Component{
 	constructor(props){
 		super(props)
-		let { groups, stages, editableMatch } = this.props;	
-
-		if ( editableMatch ){
-			this.state = {
-				selectmatchId: editableMatch.match,
-				selectStageId: editableMatch.stage,
-				selectGroupId: editableMatch.group,
-				selectTeam1Id: editableMatch.team1,
-				selectTeam2Id: editableMatch.team2,
-				score: ""
-			}
-		} else {
-			this.state = {
-				selectStageId: stages[0].id,
-				selectGroupId: groups[0].id,
-				selectTeam1Id: null,
-				selectTeam2Id: null,
-				score: ""
-			}
+		let { groups, stages, editableMatch, teams } = this.props;	
+			if (editableMatch){
+				this.state = {
+					stages: stages,
+					groups: groups,
+					teams: teams,
+					selectStageId: editableMatch.stageId,
+					selectGroupId: editableMatch.groupId,
+					selectMatchId: editableMatch.matchId,
+					selectTeam1Id: editableMatch.team1Id,
+					selectTeam2Id: editableMatch.team2Id,
+					score: editableMatch.score
+				}
+			} else {
+				this.state = {
+					stages: stages,
+					groups: groups,
+					teams: teams,
+					selectStageId: stages[0].id,
+					selectGroupId: groups[0].id,
+					selectTeam1Id: null,
+					selectTeam2Id: null,
+					score: ""
+				}
 		}
-
-		
 	}
 
 	setSelectGroupId = (id) => {
@@ -362,18 +414,87 @@ class FormAddMatch extends React.Component{
 			score: score
 		})
 	}
+
+	sendCreateMatch = (session) => {
+		
+		const { selectGroupId, selectStageId, selectTeam1Id, selectTeam2Id, score } = this.state;
+
+	
+		let xhr = new XMLHttpRequest();
+		const url = "https://api.appercode.com/v1/tmk/objects/GamesFooball";
+		let reqBody = {
+			stage: selectStageId,
+			group: selectGroupId,
+			team1: selectTeam1Id,
+			team2: selectTeam2Id,
+			score: score
+		};
+
+		xhr.open("POST", url, true);
+		xhr.setRequestHeader("X-Appercode-Session-Token", session);
+		xhr.setRequestHeader("Content-Type", "application/json");
+		xhr.onreadystatechange = function () {
+			if (xhr.readyState !== 4)
+				window.location.reload();
+		}
+		
+    xhr.send(JSON.stringify(reqBody));
+	}
+
+	sendUpdateMatch = (session) => {
+		
+		const { selectMatchId, selectGroupId, selectStageId, selectTeam1Id, selectTeam2Id, score } = this.state;
+
+	
+		let xhr = new XMLHttpRequest();
+		const url = "https://api.appercode.com/v1/tmk/objects/GamesFooball/" + selectMatchId;
+		let reqBody = {
+			stage: selectStageId,
+			group: selectGroupId,
+			team1: selectTeam1Id,
+			team2: selectTeam2Id,
+			score: score
+		};
+
+		xhr.open("PUT", url, true);
+		xhr.setRequestHeader("X-Appercode-Session-Token", session);
+		xhr.setRequestHeader("Content-Type", "application/json");
+		xhr.onreadystatechange = function () {
+			if (xhr.readyState !== 4)
+				window.location.reload();
+		};
+		xhr.send(JSON.stringify(reqBody));
+	}
+
+	sendDeleteMatch = (session) => {
+		
+		const { selectMatchId } = this.state;
+		let xhr = new XMLHttpRequest();
+		const url = "https://api.appercode.com/v1/tmk/objects/GamesFooball/" + selectMatchId;
+		xhr.open("DELETE", url, true);
+		xhr.setRequestHeader("X-Appercode-Session-Token", session);
+		xhr.onreadystatechange = function () {
+			if (xhr.readyState !== 4)
+				window.location.reload();
+		};
+		xhr.send();
+	}
 	
 
-	render(){
-		let { groups, stages, teams } = this.props;
-		const { selectGroupId, score } = this.state;
-
+	render(){		
+		const { selectStageId, selectGroupId, selectTeam1Id, selectTeam2Id, stages, score, groups, teams } = this.state;
+		const { editableMatch, app } = this.props;
+		const { sendCreateMatch, sendUpdateMatch, sendDeleteMatch } = this;
 		const stagesList = stages.map( item => (
-			<option value={item.id} key={item.id}>{item.title}</option>
+			<option value={item.id} key={item.id} >
+							{item.title}
+			</option>
 		));
 
 		const groupsList = groups.map( item => (
-			<option value={item.id} key={item.id}>{item.title}</option>
+			<option value={item.id} key={item.id}>
+							{item.title}
+			</option>
 		));
 
 		const selectGroupIndex = groups.findIndex( item => ( item.id == selectGroupId));
@@ -393,20 +514,24 @@ class FormAddMatch extends React.Component{
 		});
 
 		const teams1List = selectTeams.map( item => (
-			<option value={item.id} key={item.id}>{item.title}</option>
+			<option value={item.id} key={item.id}>
+							{item.title}
+			</option>
 		));
 		
 		const teams2List = selectTeams.map( item => (
-			<option value={item.id} key={item.id}>{item.title}</option>
+			<option value={item.id} key={item.id}>
+							{item.title}
+			</option>
 		));
 
 		return (
-
 			<form action="">
 					<div className="form-group">
             <label htmlFor="stage">Этап</label>
             <select className="form-control" 
 										name="stage" required 
+										defaultValue = {selectStageId ? selectStageId : null}
 										onChange = {event => this.setSelectStageId(event.target.value)}>
 							{stagesList}
             </select>
@@ -415,6 +540,7 @@ class FormAddMatch extends React.Component{
             <label htmlFor="group">Группа</label>
             <select className="form-control" 
 										name="group" required 
+										defaultValue = {selectGroupId ? selectGroupId : null}
 										onChange = {event => this.setSelectGroupId(event.target.value)}>
 							{groupsList}
 						</select>
@@ -423,6 +549,7 @@ class FormAddMatch extends React.Component{
             <label htmlFor="team1">Команда</label>
             <select className="form-control" 
 										name="team1" required
+										defaultValue = {selectTeam1Id ? selectTeam1Id : null}
 										onChange = {event => this.setSelectTeamId(event.target.value, "team1")}>
                 <option value="">Не выбрано</option>
                 {teams1List}
@@ -432,6 +559,7 @@ class FormAddMatch extends React.Component{
             <label htmlFor="team2">Команда</label>
             <select className="form-control" 
 										name="team2" required
+										defaultValue = {selectTeam2Id ? selectTeam2Id : null}
 										onChange = {event => this.setSelectTeamId(event.target.value, "team2")}>
                 <option value="">Не выбрано</option>
                 {teams2List}
@@ -446,16 +574,19 @@ class FormAddMatch extends React.Component{
 															 value={score} required 
 															 onChange = {event => this.setScore(event.target.value)}/>
           </div>  
-          <div className="form-group">
-            <button className="btn btn-success">Создать</button>
-            <a className="btn btn-default pull-right" href="#">Назад</a>
+					<div className="form-group">
+						{ editableMatch ? <EditMatch app = {app} 
+																				 sendUpdateMatch = { sendUpdateMatch } 
+																				 sendDeleteMatch = { sendDeleteMatch }/> 
+														: <CreateMatchButton app = {app} sendCreateMatch = { sendCreateMatch } />}
           </div>
 			</form>
 		)
 	}
 }
 
-sessionFromNative('{"sessionId":"cba99fa9-44a4-4670-9bf3-32373e59729d","userId":"90","projectName": "tmk","baseUrl":"https://api.appercode.com/v1/","refreshToken":"3b7c7aa3-29c2-4e07-8530-3153093290eb"}')
+sessionFromNative('{"sessionId":"d3a8ddc7-f1ce-4e40-ae5e-aef6dc132968","userId":"1","projectName": "tmk","baseUrl":"https://api.appercode.com/v1/","refreshToken":"462c1a7a-587a-4729-b38e-fef90af5aeae"}')
+
 
 function sessionFromNative(e){
 	const userData = JSON.parse(e);
@@ -464,12 +595,14 @@ function sessionFromNative(e){
   const projectName = userData.projectName;
   const baseUrl = userData.baseUrl;
 	const refreshToken = userData.refreshToken;
-	
+
 	ReactDOM.render(<App 
-										session={session} 
-										userId={userId}
-										baseUrl={baseUrl}
-										projectName={projectName}
-										refreshToken={refreshToken}
-									/>, document.getElementById('root'));
+		session={session} 
+		userId={userId}
+		baseUrl={baseUrl}
+		projectName={projectName}
+		refreshToken={refreshToken}
+	/>, document.getElementById('root'));
 }
+
+
