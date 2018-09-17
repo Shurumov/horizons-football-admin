@@ -220,7 +220,8 @@ class App extends React.Component {
 					addTeamsToState(teams, app);
 					addTeamNameToMathes();
 					addStageNameToMathes();
-					addGroupNameToMathes()
+					addGroupNameToMathes();
+					stopLoadingAnimation()
 				}
 			}
 		}
@@ -247,7 +248,9 @@ class App extends React.Component {
 		const { setEditableMatch } = this;
 		
 		return (<main>
+							
 							<div className="container">
+								<LoadAnimation />
 								{!createMatch ? <div>	<AddMatch app = { app } createMatch= { createMatch } />
 																			<ListMatches matches = {matches} createMatch = { createMatch }
 																						setEditableMatch = { setEditableMatch }
@@ -267,6 +270,14 @@ class App extends React.Component {
 						</main>
 		)
 	}
+}
+
+const LoadAnimation = () => {
+	return(
+		<div className="loader_background">
+			<div className="loader"></div>
+		</div>
+	)
 }
 
 const AddMatch = (props) => {
@@ -585,8 +596,14 @@ class FormEditMatch extends React.Component{
 	}
 }
 
+
 sessionFromNative('{"sessionId":"d3a8ddc7-f1ce-4e40-ae5e-aef6dc132968","userId":"1","projectName": "tmk","baseUrl":"https://api.appercode.com/v1/","refreshToken":"462c1a7a-587a-4729-b38e-fef90af5aeae"}')
 
+
+
+function stopLoadingAnimation(){
+	document.querySelector(".loader_background").hidden = true;
+}
 
 function sessionFromNative(e){
 	const userData = JSON.parse(e);
