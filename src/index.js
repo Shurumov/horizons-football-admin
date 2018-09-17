@@ -10,6 +10,7 @@ class App extends React.Component {
 		super(props);
 		let { session } = this.props;
 		this.state = {
+			loading: true,
 			createMatch: false,
 			matches: [],
 			teams: [],
@@ -221,7 +222,9 @@ class App extends React.Component {
 					addTeamNameToMathes();
 					addStageNameToMathes();
 					addGroupNameToMathes();
-					stopLoadingAnimation()
+					app.setState({
+						loading: false
+					})
 				}
 			}
 		}
@@ -243,14 +246,16 @@ class App extends React.Component {
 	}
 
 	render(){
-		let { groups, matches, stages, teams, createMatch, editableMatch } = this.state;
+		let { groups, matches, stages, teams, createMatch, editableMatch, loading } = this.state;
 		const app = this;
 		const { setEditableMatch } = this;
 		
 		return (<main>
 							
 							<div className="container">
-								<LoadAnimation />
+								{loading ? <LoadAnimation /> : null}
+
+								
 								{!createMatch ? <div>	<AddMatch app = { app } createMatch= { createMatch } />
 																			<ListMatches matches = {matches} createMatch = { createMatch }
 																						setEditableMatch = { setEditableMatch }
@@ -599,11 +604,6 @@ class FormEditMatch extends React.Component{
 
 sessionFromNative('{"sessionId":"d3a8ddc7-f1ce-4e40-ae5e-aef6dc132968","userId":"1","projectName": "tmk","baseUrl":"https://api.appercode.com/v1/","refreshToken":"462c1a7a-587a-4729-b38e-fef90af5aeae"}')
 
-
-
-function stopLoadingAnimation(){
-	document.querySelector(".loader_background").hidden = true;
-}
 
 function sessionFromNative(e){
 	const userData = JSON.parse(e);
