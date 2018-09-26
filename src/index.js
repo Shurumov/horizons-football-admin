@@ -287,13 +287,14 @@ const LoadAnimation = () => {
 
 const AddMatch = (props) => {
 	
-	const { app, createMatch } = props
+	const { app, createMatch } = props;
+
 
 	return(
 		<div className="row">
 			<div className="col-xs-4">
 					<a href="#" className="btn btn-success" 
-						 onClick = {() => {app.setState({createMatch: !createMatch})}}>
+						 onClick = {() => {app.setState({createMatch: !createMatch})}} >
 						 Добавить
 					</a>
 			</div>
@@ -312,23 +313,53 @@ const BackButton = (props) => {
 }
 
 const CreateMatchButton = (props) => {
-	const { app, sendCreateMatch } = props;
+	const { app, sendCreateMatch, form } = props;
+	const { selectGroupId, selectStageId, selectTeam1Id, selectTeam2Id, score } = form.state;
+	const disableButton = score && selectGroupId && selectStageId && selectTeam1Id && selectTeam2Id;
+	
+	let panel;
+	if (disableButton.length > 0){
+		panel = <div className="form-group">
+						<button className="btn btn-success" 
+							onClick = { (e) => sendCreateMatch(e, app.state.session, app) }>
+															Создать</button>
+						<BackButton app = { app } />
+					</div>
+	} else {
+		panel = <div className="form-group">
+						<button disabled className="btn btn-success" 
+							onClick = { (e) => sendCreateMatch(e, app.state.session, app) }>
+															Создать</button>
+						<BackButton app = { app } />
+					</div>
+	}
+
 	return (
-		<div className="form-group">
-			<a className="btn btn-success" onClick = { () => sendCreateMatch(app.state.session) }>Создать</a>
-			<BackButton app = { app } />
+		<div>
+			{ panel }
 		</div>
 	)
 }
 
 const EditMatch = (props) => {
-	const { app, sendUpdateMatch, sendDeleteMatch } = props;
+	const { app, sendUpdateMatch, sendDeleteMatch, form } = props;
+	const { selectGroupId, selectStageId, selectTeam1Id, selectTeam2Id, score } = form.state;
+	const disableButton = score && selectGroupId && selectStageId && selectTeam1Id && selectTeam2Id;
+	let saveButton;
+
+	if(disableButton.length > 0) {
+		saveButton = <button className="btn btn-success" 
+		onClick = { (e) => sendUpdateMatch(e, app.state.session, app)}>Сохранить</button>
+	} else {
+		saveButton = <button disabled className="btn btn-success" 
+		onClick = { (e) => sendUpdateMatch(e, app.state.session, app)}>Сохранить</button>
+	}
+
 	return (
 		<div className="form-group">
-			<a className="btn btn-success" 
-							onClick = { () => sendUpdateMatch(app.state.session)}>Сохранить</a>
+			{saveButton}
 			<a className = "btn btn-default"
-							onClick = { () => sendDeleteMatch(app.state.session) }>Удалить</a>
+							onClick = { () => sendDeleteMatch(app.state.session, app) }>Удалить</a>
 			<BackButton app = { app }/>
 		</div>
 	)
@@ -431,13 +462,13 @@ class FormEditMatch extends React.Component{
 		})
 	}
 
-	sendCreateMatch = (session) => {
-		
+	sendCreateMatch = (e, session, app) => {
+		e.preventDefault();
 		const { selectGroupId, selectStageId, selectTeam1Id, selectTeam2Id, score } = this.state;
-
-	
+		const { baseUrl, projectName, isiOS} = app.props;
+		var appercode; 
 		let xhr = new XMLHttpRequest();
-		const url = "https://api.appercode.com/v1/tmk/objects/GamesFooball";
+		const url = baseUrl + projectName +  "/objects/GamesFooball";
 		let reqBody = {
 			stage: selectStageId,
 			group: selectGroupId,
@@ -450,20 +481,26 @@ class FormEditMatch extends React.Component{
 		xhr.setRequestHeader("X-Appercode-Session-Token", session);
 		xhr.setRequestHeader("Content-Type", "application/json");
 		xhr.onreadystatechange = function () {
-			if (xhr.readyState !== 4)
-				window.location.reload();
+			if (xhr.readyState !== 4){
+				if (isiOS){
+					window.location.reload();
+				} else {
+					appercode.reloadPage()
+				}
+			}
 		}
 		
     xhr.send(JSON.stringify(reqBody));
 	}
 
-	sendUpdateMatch = (session) => {
-		
+	sendUpdateMatch = (e, session, app) => {
+		e.preventDefault();
 		const { selectMatchId, selectGroupId, selectStageId, selectTeam1Id, selectTeam2Id, score } = this.state;
-
+		const { baseUrl, projectName, isiOS } = app.props;
+		var appercode; 
 	
 		let xhr = new XMLHttpRequest();
-		const url = "https://api.appercode.com/v1/tmk/objects/GamesFooball/" + selectMatchId;
+		const url = baseUrl + projectName + "/objects/GamesFooball/" + selectMatchId;
 		let reqBody = {
 			stage: selectStageId,
 			group: selectGroupId,
@@ -476,22 +513,35 @@ class FormEditMatch extends React.Component{
 		xhr.setRequestHeader("X-Appercode-Session-Token", session);
 		xhr.setRequestHeader("Content-Type", "application/json");
 		xhr.onreadystatechange = function () {
-			if (xhr.readyState !== 4)
-				window.location.reload();
+			if (xhr.readyState !== 4){
+				if (isiOS){
+					window.location.reload();
+				} else{
+					appercode.reloadPage()
+				}
+			}
 		};
 		xhr.send(JSON.stringify(reqBody));
 	}
 
-	sendDeleteMatch = (session) => {
+	sendDeleteMatch = (session, app) => {
 		
 		const { selectMatchId } = this.state;
+		const { baseUrl, projectName, isiOS } = app.props;
+		var appercode; 
+		
 		let xhr = new XMLHttpRequest();
-		const url = "https://api.appercode.com/v1/tmk/objects/GamesFooball/" + selectMatchId;
+		const url = baseUrl + projectName + "/objects/GamesFooball/" + selectMatchId;
 		xhr.open("DELETE", url, true);
 		xhr.setRequestHeader("X-Appercode-Session-Token", session);
 		xhr.onreadystatechange = function () {
-			if (xhr.readyState !== 4)
-				window.location.reload();
+			if (xhr.readyState !== 4){
+				if (isiOS){
+					window.location.reload();
+				} else{
+					appercode.reloadPage()
+				}
+			}
 		};
 		xhr.send();
 	}
@@ -593,16 +643,16 @@ class FormEditMatch extends React.Component{
 					<div className="form-group">
 						{ editableMatch ? <EditMatch app = {app} 
 																				 sendUpdateMatch = { sendUpdateMatch } 
-																				 sendDeleteMatch = { sendDeleteMatch }/> 
-														: <CreateMatchButton app = {app} sendCreateMatch = { sendCreateMatch } />}
+																				 sendDeleteMatch = { sendDeleteMatch }
+																				 form = { this }/> 
+														: <CreateMatchButton app = {app} 
+																								 sendCreateMatch = { sendCreateMatch } 
+																								 form = { this }/>}
           </div>
 			</form>
 		)
 	}
 }
-
-
-sessionFromNative('{"sessionId":"904946f8-ecf3-4107-ad74-e5d2eb67736c","userId":"4784","projectName": "tmk","baseUrl":"https://api.appercode.com/v1/","refreshToken":"d69f0ba6-bd1e-49ac-be6f-f63682f78e67"}')
 
 function sessionFromNative(e){
 	const userData = JSON.parse(e);
@@ -611,6 +661,7 @@ function sessionFromNative(e){
   const projectName = userData.projectName;
   const baseUrl = userData.baseUrl;
 	const refreshToken = userData.refreshToken;
+	const isiOS = (userData.isiOS == "iOS");
 
 	ReactDOM.render(<App 
 		session={session} 
@@ -618,5 +669,9 @@ function sessionFromNative(e){
 		baseUrl={baseUrl}
 		projectName={projectName}
 		refreshToken={refreshToken}
+		isiOS = { isiOS }
 	/>, document.getElementById('root'));
 }
+
+
+sessionFromNative('{"sessionId":"895d6837-7efa-4745-b96a-138ce3dd300e","isiOS":"android","userId":"90","projectName": "tmk","baseUrl":"http://test.appercode.com/v1/","refreshToken":"1"}')
