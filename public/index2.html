@@ -23,7 +23,6 @@
   </style>
     <div id="root"></div>
     <script type="text/babel">
-
 class App extends React.Component {
 	
 	constructor(props){
@@ -307,15 +306,16 @@ const LoadAnimation = () => {
 
 const AddMatch = (props) => {
 	
-	const { app, createMatch } = props
+	const { app, createMatch } = props;
+
 
 	return(
 		<div className="row">
 			<div className="col-xs-4">
-					<a href="#" className="btn btn-success" 
+					<div className="btn btn-success" 
 						 onClick = {() => {app.setState({createMatch: !createMatch})}} >
 						 Добавить
-					</a>
+					</div>
 			</div>
 		</div>
 	)
@@ -325,30 +325,60 @@ const BackButton = (props) => {
 	const { app } = props;
 
 	return (
-		<a className="btn btn-default pull-right" href="#" 
+		<div className="btn btn-default pull-right" 
 			 onClick = { () => app.setState({createMatch: false, editableMatch: null})}>
-			 Назад</a>
+			 Назад</div>
 	)
 }
 
 const CreateMatchButton = (props) => {
-	const { app, sendCreateMatch } = props;
+	const { app, sendCreateMatch, form } = props;
+	const { selectGroupId, selectStageId, selectTeam1Id, selectTeam2Id, score } = form.state;
+	const disableButton = score && selectGroupId && selectStageId && selectTeam1Id && selectTeam2Id;
+	
+	let panel;
+	if (disableButton.length > 0){
+		panel = <div className="form-group">
+						<button className="btn btn-success" 
+							onClick = { (e) => sendCreateMatch(e, app.state.session, app) }>
+															Создать</button>
+						<BackButton app = { app } />
+					</div>
+	} else {
+		panel = <div className="form-group">
+						<button disabled className="btn btn-success" 
+							onClick = { (e) => sendCreateMatch(e, app.state.session, app) }>
+															Создать</button>
+						<BackButton app = { app } />
+					</div>
+	}
+
 	return (
-		<div className="form-group">
-			<a className="btn btn-success" onClick = { () => sendCreateMatch(app.state.session, app) }>Создать</a>
-			<BackButton app = { app } />
+		<div>
+			{ panel }
 		</div>
 	)
 }
 
 const EditMatch = (props) => {
-	const { app, sendUpdateMatch, sendDeleteMatch } = props;
+	const { app, sendUpdateMatch, sendDeleteMatch, form } = props;
+	const { selectGroupId, selectStageId, selectTeam1Id, selectTeam2Id, score } = form.state;
+	const disableButton = score && selectGroupId && selectStageId && selectTeam1Id && selectTeam2Id;
+	let saveButton;
+
+	if(disableButton.length > 0) {
+		saveButton = <button className="btn btn-success" 
+		onClick = { (e) => sendUpdateMatch(e, app.state.session, app)}>Сохранить</button>
+	} else {
+		saveButton = <button disabled className="btn btn-success" 
+		onClick = { (e) => sendUpdateMatch(e, app.state.session, app)}>Сохранить</button>
+	}
+
 	return (
 		<div className="form-group">
-			<a className="btn btn-success" 
-							onClick = { () => sendUpdateMatch(app.state.session, app)}>Сохранить</a>
-			<a className = "btn btn-default"
-							onClick = { () => sendDeleteMatch(app.state.session, app) }>Удалить</a>
+			{saveButton}
+			<div className = "btn btn-default"
+							onClick = { () => sendDeleteMatch(app.state.session, app) }>Удалить</div>
 			<BackButton app = { app }/>
 		</div>
 	)
@@ -451,13 +481,13 @@ class FormEditMatch extends React.Component{
 		})
 	}
 
-	sendCreateMatch = (session, app) => {
-
+	sendCreateMatch = (e, session, app) => {
+		e.preventDefault();
 		const { selectGroupId, selectStageId, selectTeam1Id, selectTeam2Id, score } = this.state;
-		const { isiOS } = app.props;
-		var appercode; 
+		const { baseUrl, projectName, isiOS} = app.props;
+		
 		let xhr = new XMLHttpRequest();
-		const url = "https://api.appercode.com/v1/tmk/objects/GamesFooball";
+		const url = baseUrl + projectName +  "/objects/GamesFooball";
 		let reqBody = {
 			stage: selectStageId,
 			group: selectGroupId,
@@ -473,7 +503,7 @@ class FormEditMatch extends React.Component{
 			if (xhr.readyState !== 4){
 				if (isiOS){
 					window.location.reload();
-				} else{
+				} else {
 					appercode.reloadPage()
 				}
 			}
@@ -482,14 +512,14 @@ class FormEditMatch extends React.Component{
     xhr.send(JSON.stringify(reqBody));
 	}
 
-	sendUpdateMatch = (session, app) => {
-		
+	sendUpdateMatch = (e, session, app) => {
+		e.preventDefault();
 		const { selectMatchId, selectGroupId, selectStageId, selectTeam1Id, selectTeam2Id, score } = this.state;
-		const { isiOS } = app.props;
-		var appercode; 
+		const { baseUrl, projectName, isiOS } = app.props;
+		 
 	
 		let xhr = new XMLHttpRequest();
-		const url = "https://api.appercode.com/v1/tmk/objects/GamesFooball/" + selectMatchId;
+		const url = baseUrl + projectName + "/objects/GamesFooball/" + selectMatchId;
 		let reqBody = {
 			stage: selectStageId,
 			group: selectGroupId,
@@ -516,11 +546,11 @@ class FormEditMatch extends React.Component{
 	sendDeleteMatch = (session, app) => {
 		
 		const { selectMatchId } = this.state;
-		const { isiOS } = app.props;
-		var appercode; 
+		const { baseUrl, projectName, isiOS } = app.props;
+		 
 		
 		let xhr = new XMLHttpRequest();
-		const url = "https://api.appercode.com/v1/tmk/objects/GamesFooball/" + selectMatchId;
+		const url = baseUrl + projectName + "/objects/GamesFooball/" + selectMatchId;
 		xhr.open("DELETE", url, true);
 		xhr.setRequestHeader("X-Appercode-Session-Token", session);
 		xhr.onreadystatechange = function () {
@@ -632,8 +662,11 @@ class FormEditMatch extends React.Component{
 					<div className="form-group">
 						{ editableMatch ? <EditMatch app = {app} 
 																				 sendUpdateMatch = { sendUpdateMatch } 
-																				 sendDeleteMatch = { sendDeleteMatch }/> 
-														: <CreateMatchButton app = {app} sendCreateMatch = { sendCreateMatch } />}
+																				 sendDeleteMatch = { sendDeleteMatch }
+																				 form = { this }/> 
+														: <CreateMatchButton app = {app} 
+																								 sendCreateMatch = { sendCreateMatch } 
+																								 form = { this }/>}
           </div>
 			</form>
 		)
@@ -647,7 +680,7 @@ function sessionFromNative(e){
   const projectName = userData.projectName;
   const baseUrl = userData.baseUrl;
 	const refreshToken = userData.refreshToken;
-	const isiOS = (userData.isiOS == "iOS");
+	const isiOS = (userData.appPlatform == "iOS");
 
 	ReactDOM.render(<App 
 		session={session} 
