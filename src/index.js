@@ -144,7 +144,7 @@ class App extends React.Component {
 
 		function getStages(baseUrl, projectName, session){
 			var xhr = new XMLHttpRequest();
-			xhr.open('GET', baseUrl + projectName + "/objects/Stages?include=['title','date','id']&take=-1");
+			xhr.open('GET', baseUrl + projectName + "/objects/Stages?include=['title','date','id']&take=-1&order=createdAt");
 			xhr.setRequestHeader('X-Appercode-Session-Token', session);
 			xhr.send();
 	
@@ -173,7 +173,7 @@ class App extends React.Component {
 
 		function getGroups(baseUrl, projectName, session){
 			var xhr = new XMLHttpRequest();
-			xhr.open('GET', baseUrl + projectName + "/objects/GroupsFootball?include=['title','stage','teams','id']&take=-1");
+			xhr.open('GET', baseUrl + projectName + "/objects/GroupsFootball?include=['title','stage','teams','id']&take=-1&order=createdAt");
 			xhr.setRequestHeader('X-Appercode-Session-Token', session);
 			xhr.send();
 	
@@ -293,10 +293,10 @@ const AddMatch = (props) => {
 	return(
 		<div className="row">
 			<div className="col-xs-4">
-					<a href="#" className="btn btn-success" 
+					<div className="btn btn-success" 
 						 onClick = {() => {app.setState({createMatch: !createMatch})}} >
 						 Добавить
-					</a>
+					</div>
 			</div>
 		</div>
 	)
@@ -306,9 +306,9 @@ const BackButton = (props) => {
 	const { app } = props;
 
 	return (
-		<a className="btn btn-default pull-right" href="#" 
+		<div className="btn btn-default pull-right" 
 			 onClick = { () => app.setState({createMatch: false, editableMatch: null})}>
-			 Назад</a>
+			 Назад</div>
 	)
 }
 
@@ -661,7 +661,7 @@ function sessionFromNative(e){
   const projectName = userData.projectName;
   const baseUrl = userData.baseUrl;
 	const refreshToken = userData.refreshToken;
-	const isiOS = (userData.isiOS == "iOS");
+	const isiOS = (userData.appPlatform == "iOS");
 
 	ReactDOM.render(<App 
 		session={session} 
@@ -673,5 +673,4 @@ function sessionFromNative(e){
 	/>, document.getElementById('root'));
 }
 
-
-sessionFromNative('{"sessionId":"895d6837-7efa-4745-b96a-138ce3dd300e","isiOS":"android","userId":"90","projectName": "tmk","baseUrl":"http://test.appercode.com/v1/","refreshToken":"1"}')
+window.sessionFromNative = sessionFromNative;
