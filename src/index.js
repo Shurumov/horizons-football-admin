@@ -358,8 +358,8 @@ const EditMatch = (props) => {
 	return (
 		<div className="form-group">
 			{saveButton}
-			<a className = "btn btn-default"
-							onClick = { () => sendDeleteMatch(app.state.session, app) }>Удалить</a>
+			<div className = "btn btn-default"
+							onClick = { () => sendDeleteMatch(app.state.session, app) }>Удалить</div>
 			<BackButton app = { app }/>
 		</div>
 	)
@@ -372,7 +372,7 @@ const ListMatches = (props) => {
 
 		<tr key = { index }>
       <td onClick={() => setEditableMatch(match.stage, match.group, match.team1, match.team2, match.id, match.score)}>
-      	<a href="#" 
+      	<a
 					  >
 					 {match.score}</a>
       </td>
@@ -672,5 +672,6 @@ function sessionFromNative(e){
 		isiOS = { isiOS }
 	/>, document.getElementById('root'));
 }
+
 
 window.sessionFromNative = sessionFromNative;
